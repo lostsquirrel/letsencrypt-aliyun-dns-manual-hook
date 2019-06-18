@@ -1,0 +1,8 @@
+.settings
+*.pyc
+.pydevproject
+.project
+*.data
+/.idea/
+/venv/
+others/ali_access_key.conf
