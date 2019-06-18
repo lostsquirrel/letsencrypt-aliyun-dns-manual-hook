@@ -5,6 +5,7 @@ import os
 import getopt
 import time
 import dns.resolver
+import logging
 
 from aliyun import Line, add_domain_record, RecordType, delete_sub_domain_record
 
@@ -13,10 +14,14 @@ DOMAIN = 'CERTBOT_DOMAIN'  # The domain being authenticated
 RR = '_acme-challenge'
 DNS_LINE = (Line.default, Line.google)
 
+logging.basicConfig(level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
+
 
 def query_dns(domain_name):
     try:
-        return dns.resolver.query(domain_name).response.answer[0][-1].strings[0]
+        return dns.resolver.query(domain_name, rdtype=dns.rdatatype.TXT).response.answer[0][-1].strings[0]
     except dns.resolver.NXDOMAIN:
         return None
 
@@ -31,16 +36,18 @@ def auth():
             add_domain_record(domain_name, RR, RecordType.TXT, value, line=line)
 
         while True:
-            if query_dns('{}.{}'.format(RR, domain_name)) == value:
+            actual = query_dns('{}.{}'.format(RR, domain_name))
+            logger.debug('query dns result {}'.format(actual))
+            if actual == value:
                 break
             else:
-                print('resolver result not match wait for 1 minute')
+                logger.info('resolver result not match wait for 1 minute')
                 time.sleep(1)
 
         print('Success.')
 
     except Exception as e:
-        print('Error: ' + str(e.message) + '\n')
+        logger.error('Error: {}'.format(e.message))
         sys.exit()
 
 
@@ -56,10 +63,10 @@ def cleanup():
         validate_required_env((DOMAIN, CERTBOT_VALIDATION))
         domain_name = os.environ[DOMAIN]
         delete_sub_domain_record(domain_name, RR)
-        print('Finished...')
+        logger.info('Finished...')
 
     except Exception as e:
-        print('Error: ' + str(e.message) + '\n')
+        logger.error('Error: {}'.format(e.message))
         sys.exit()
 
 
@@ -83,10 +90,9 @@ def main(argv):
                 print('Invalid option: ' + opt)
 
     except getopt.GetoptError as e:
-        print('Error: ' + str(e) + '\n')
+        logger.error('Error: {}'.format(e.message))
     except Exception as e:
-        if e.message != '':
-            print('Error: ' + str(e.message) + '\n')
+        logger.error('Error: {}'.format(e.message))
 
         sys.exit()
 

@@ -39,9 +39,11 @@ certbot certonly \
 docker run -it --rm --net host --name certbot \
             -v "/etc/letsencrypt:/etc/letsencrypt" \
             -v "/var/lib/letsencrypt:/var/lib/letsencrypt" \
-            -v "$(PWD)/config.ini:/etc/alidns/config.ini" \
+            -v "$(pwd)/config.ini:/etc/alidns/config.ini" \
             certbot/alidns:v1.0.0 \
             certonly -a manual \
+            --manual-auth-hook 'python /alidns/manual_hook.py --auth' \
+            --manual-cleanup-hook 'python /alidns/manual_hook.py --cleanup' \
             --email your-email@example.com \
             --preferred-challenges dns-01 \
             --server https://acme-v02.api.letsencrypt.org/directory \

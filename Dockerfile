@@ -1,7 +1,10 @@
-FROM certbot/cerbot
+FROM certbot/certbot
 
 ADD . /alidns
 
-RUN pip install -r /alidns/requirements.txt
+RUN apk add --no-cache --virtual .build-deps \
+    build-base \
+    && pip install -r /alidns/requirements.txt \
+    && apk del .build-deps
 
 VOLUME /etc/alidns
