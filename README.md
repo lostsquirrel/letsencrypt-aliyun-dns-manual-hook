@@ -4,14 +4,13 @@ Let’s Encrypt通配符证书申请，只能用DNS plugins的验证方式。其
 - **--manual-auth-hook**  
 - **--manual-cleanup-hook**
 
-强烈建议看完本人的这篇博文之后再来使用：《[LET’S ENCRYPT通配符证书的申请与自动更新（附阿里云域名的HOOK脚本）](http://blog.dreamlikes.cn/archives/1028)》
-
 这个工具是专门针对阿里云（万网）域名使用的，其他域名供应商的请勿使用。
 
 ## 使用步骤
 ### 一、下载代码
 ```
-git clone https://github.com/broly8/letsencrypt-aliyun-dns-manual-hook.git
+git clone https://github.com/lostsquirrel/letsencrypt-aliyun-dns-manual-hook.git
+docker build -t certbot/alidns:v1.0.0 .
 ```
 
 ### 二、配置appid和appsecret
@@ -35,14 +34,23 @@ certbot certonly \
 --manual-cleanup-hook 'python /path/to/manual-hook.py --cleanup'
 ```
 
-如果你对certbot工具不熟悉，或者仅仅想申请自己的通配符证书，可以使用本人提供的另一个脚本工具 **letsencrypt-create.sh** ，使用方法很简单
+使用方法
 ```
-sh letsencrypt-create.sh -m your-email@example.com -d yourdomain.com
+docker run -it --rm --net host --name certbot \
+            -v "/etc/letsencrypt:/etc/letsencrypt" \
+            -v "/var/lib/letsencrypt:/var/lib/letsencrypt" \
+            -v "$(PWD)/config.ini:/etc/alidns/config.ini" \
+            certbot/alidns:v1.0.0 \
+            certonly -a manual \
+            --email your-email@example.com \
+            --preferred-challenges dns-01 \
+            --server https://acme-v02.api.letsencrypt.org/directory \
+            -d *.yourdomain.com
 ```
 
 如果想强制生成或者更新通配符证书，则使用 **-f** 参数
 ```
-sh letsencrypt-create.sh -m your-email@example.com -d yourdomain.com -f
+
 ```
 
 如使用过程有任何问题，欢迎issue。
